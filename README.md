@@ -1,3 +1,13 @@
+---
+title: Code Review Env
+emoji: 🦀
+colorFrom: indigo
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Code Review Assistant — OpenEnv Environment
 
 An AI agent training environment for automated code review. Agents learn to detect
