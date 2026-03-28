@@ -1,0 +1,100 @@
+name: code-review-assistant
+version: 1.0.0
+description: AI agent environment for automated code review — detects security vulnerabilities, concurrency bugs, and performance issues across difficulty-tiered scenarios
+author: Madhan J & Sahithya BR
+license: MIT
+api_provider: groq
+model: llama-3.3-70b-versatile
+
+task_count: 3
+tasks:
+  - id: easy_sql_injection
+    difficulty: easy
+    description: Detect SQL injection vulnerability (with safe-code distractors)
+    issue_count: 1
+  - id: medium_race_condition
+    difficulty: medium
+    description: Find race conditions and concurrency bugs (with thread-safe distractors)
+    issue_count: 2
+  - id: hard_memory_leak
+    difficulty: hard
+    description: Identify memory leaks and complex logic bugs (with safe-iteration distractors)
+    issue_count: 3
+
+observation_space:
+  type: object
+  properties:
+    code:
+      type: string
+      description: Code snippet under review (with line numbers for accurate reporting)
+    task_description:
+      type: string
+      description: Review objective
+    review_history:
+      type: array
+      description: List of previous actions taken this episode
+    step_count:
+      type: integer
+      description: Current step number (1-indexed)
+    remaining_steps:
+      type: integer
+      description: Steps remaining before episode timeout
+
+action_space:
+  type: object
+  required:
+    - action_type
+  properties:
+    action_type:
+      type: string
+      enum: [identify_issue, suggest_fix, approve, request_changes]
+      description: >
+        identify_issue — report one specific code issue (requires issue_type, line_number, description, severity).
+        suggest_fix    — propose a corrected code snippet (requires suggested_fix).
+        approve        — mark the code as safe after all issues are found.
+        request_changes — close episode with partial findings.
+    issue_type:
+      type: string
+      enum: [bug, security, style, logic, performance]
+      description: Required when action_type is identify_issue
+    line_number:
+      type: integer
+      description: Required when action_type is identify_issue
+    description:
+      type: string
+      description: Required when action_type is identify_issue
+    severity:
+      type: string
+      enum: [critical, high, medium, low]
+      description: Required when action_type is identify_issue
+    suggested_fix:
+      type: string
+      description: Required when action_type is suggest_fix
+
+reward_range:
+  min: -2.0
+  max: 6.0
+
+episode_length:
+  max_steps: 50
+  average_steps: 4
+
+metrics:
+  - name: recall
+    description: Fraction of real issues found (primary metric — weight 0.5)
+  - name: precision
+    description: Fraction of reported issues that are real (weight 0.3)
+  - name: severity_match
+    description: Fraction of found issues with correct severity classification (weight 0.2)
+  - name: f1
+    description: Harmonic mean of recall and precision (reported in info dict per step)
+
+grading:
+  method: deterministic
+  score_range: [0.0, 1.0]
+  line_tolerance: 2
+  formula: "0.5 * recall + 0.3 * precision + 0.2 * severity_match"
+  rationale: >
+    Recall is weighted highest (0.5) because missing a real bug is more costly
+    than a false alarm. Precision (0.3) penalises hallucinations. Severity match
+    (0.2) rewards correct clinical triage of issue criticality.
