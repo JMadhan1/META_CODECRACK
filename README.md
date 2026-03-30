@@ -1,16 +1,16 @@
 ---
-title: Code Review Env  
-emoji: 🔍
+title: CodeCrack
+emoji: ⚡
 colorFrom: indigo
-colorTo: purple
+colorTo: cyan
 sdk: docker
 app_port: 7860
 pinned: false
 ---
 
-# Code Review Assistant — OpenEnv Environment
+# ⚡ CodeCrack — AI Code Review Dashboard
 
-**AI agent training environment for automated code review** with difficulty-tiered tasks and safe-code distractors that test precision, not just recall.
+**AI agent training environment for automated code review** with a premium interactive dashboard, difficulty-tiered tasks, and safe-code distractors that test precision, not just recall.
 
 ---
 
@@ -64,15 +64,15 @@ export GROQ_API_KEY=gsk_...
 # OR
 export TOGETHER_API_KEY=...
 
+# Launch the premium dashboard
+python app.py
+# → http://localhost:7860
+
 # Run baseline
 python inference.py
 
 # Validate environment
 bash validate.sh
-
-# Start API server
-python api.py
-# → http://localhost:7860
 ```
 
 ---
@@ -220,4 +220,4 @@ git push hf main
 
 ---
 
-Built for the **Scaler Meta PyTorch Hackathon** (Round 1: March 25 - April 8, 2025)
+Built for the **Scaler Meta PyTorch Hackathon** (Round 1: March 25 - April 8, 2025) — **CodeCrack** ⚡

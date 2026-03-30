@@ -19,4 +19,5 @@ RUN python -c "from environment import CodeReviewEnv; env = CodeReviewEnv(); obs
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7860/')" || exit 1
 
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run CodeCrack dashboard (serves on port 7860 for Hugging Face Spaces)
+CMD ["python", "app.py"]
