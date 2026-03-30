@@ -173,7 +173,7 @@ docker run -p 7860:7860 \
 ## 📦 Hugging Face Spaces
 
 Already deployed at:
-**https://huggingface.co/spaces/jmadhanplacement/code-review-env**
+**https://huggingface.co/spaces/METAHACK/CodeCrack**
 
 To update:
 ```bash
