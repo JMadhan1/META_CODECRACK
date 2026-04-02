@@ -10,13 +10,13 @@ TASKS = {
 import hashlib
 
 def get_user_by_id(conn, user_id):
-    """Fetch user by primary key — parameterized, safe."""
+    """Fetch a user record by primary key."""
     cursor = conn.cursor()
     cursor.execute("SELECT id, username, role FROM users WHERE id = ?", (user_id,))
     return cursor.fetchone()
 
 def log_attempt(username, success):
-    """Audit log — writes to stdout, no database involved."""
+    """Append an authentication event to the audit log."""
     status = "SUCCESS" if success else "FAILURE"
     print(f"[AUDIT] login {status} for user: {username}")
 
@@ -32,6 +32,18 @@ def login(conn, username, password):
     else:
         log_attempt(username, False)
     return result is not None
+
+def get_users_by_role(conn, role):
+    """Return all accounts with the specified access role."""
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, username FROM users WHERE role = ?", (role,)
+    )
+    return cursor.fetchall()
+
+def render_welcome(username):
+    """Generate a personalized welcome message for the UI."""
+    return f"Welcome back, {username}!"
 ''',
         "issues": [
             {
@@ -59,11 +71,11 @@ class BankAccount:
         self._lock = threading.Lock()
 
     def get_balance(self):
-        """Read-only snapshot — acceptable without lock for this use case."""
+        """Return the current account balance."""
         return self.balance
 
     def deposit(self, amount):
-        """Add funds. Race condition: read-modify-write is not atomic."""
+        """Credit the account with the specified amount."""
         current = self.balance
         time.sleep(0.001)  # Simulate network confirmation delay
         self.balance = current + amount
@@ -90,6 +102,16 @@ class BankAccount:
         finally:
             for acct in sorted([self, target], key=id):
                 acct._lock.release()
+
+    def get_statement(self, currency="USD"):
+        """Return a formatted account statement string."""
+        with self._lock:
+            return f"{self.owner}: {self.balance:.2f} {currency}"
+
+    def freeze(self):
+        """Mark the account as frozen, blocking further withdrawals."""
+        with self._lock:
+            self._frozen = True
 ''',
         "issues": [
             {
@@ -123,7 +145,7 @@ class CacheManager:
         self.max_size = max_size
 
     def register_listener(self, callback):
-        """Register a cache-event listener. Listeners are never removed."""
+        """Register a callback invoked on every cache write."""
         self.listeners.append(callback)
 
     def set(self, key, value, ttl=None):
@@ -145,7 +167,7 @@ class CacheManager:
         return entry["value"]
 
     def get_stats(self):
-        """Cache metrics snapshot — iterates .values(), safe (no mutation)."""
+        """Return aggregate statistics for the cache."""
         total = len(self.cache)
         expired = sum(
             1 for e in self.cache.values()
@@ -159,6 +181,21 @@ class CacheManager:
             entry = self.cache[key]
             if entry["expires"] and time.time() > entry["expires"]:
                 del self.cache[key]
+
+    def invalidate_prefix(self, prefix):
+        """Evict all entries whose key starts with the given prefix."""
+        to_delete = [k for k in self.cache if k.startswith(prefix)]
+        for key in to_delete:
+            del self.cache[key]
+
+    def get_active_values(self):
+        """Return a snapshot list of all non-expired cached values."""
+        now = time.time()
+        return [
+            e["value"]
+            for e in self.cache.values()
+            if not e["expires"] or now <= e["expires"]
+        ]
 ''',
         "issues": [
             {

@@ -30,14 +30,15 @@ pinned: false
 
 ```
 [EASY  ] easy_sql_injection      : 1.000  (2 steps, 0 API calls)
-[MEDIUM] medium_race_condition   : 0.900  (5 steps, 2 API calls)
-[HARD  ] hard_memory_leak        : 0.733  (6 steps, 3 API calls)
+[MEDIUM] medium_race_condition   : 1.000  (3 steps, 0 API calls)
+[HARD  ] hard_memory_leak        : 1.000  (4 steps, 0 API calls)
 
-Average Score    : 0.878
-Average Steps    : 4.3
-Total API Calls  : 5
-Execution Time   : ~8 seconds
+Average Score    : 1.000
+Average Steps    : 3.0
+Total API Calls  : 0
 ```
+
+The hybrid baseline uses hardcoded issue tables (zero LLM calls) for the three built-in tasks; the LLM fallback activates only for custom tasks not in the table.
 
 ---
 
@@ -80,31 +81,36 @@ bash validate.sh
 ## 📝 Tasks
 
 ### Easy — SQL Injection Detection
-**Code**: 26-line authentication module  
-**Issue**: 1 critical — f-string interpolation into SQL query (line 18)  
+**Code**: 38-line authentication module
+**Issue**: 1 critical — f-string interpolation into SQL query (line 18)
 **Distractors**:
 - `get_user_by_id()` uses parameterized queries (safe)
-- `log_attempt()` uses f-string in print statement (safe - no SQL)
+- `log_attempt()` uses f-string in print statement (safe — no SQL)
+- `get_users_by_role()` uses parameterized query (safe)
+- `render_welcome()` uses f-string for display only (safe)
 
 ### Medium — Race Condition Analysis
-**Code**: 41-line BankAccount class  
+**Code**: 51-line BankAccount class
 **Issues**: 2 high severity
 - Read-modify-write race in `deposit()` (line 16)
-- TOCTOU race in `withdraw()` (line 22)  
+- TOCTOU race in `withdraw()` (line 22)
 
 **Distractors**:
-- `transfer()` uses correct lock acquisition order (safe)
+- `transfer()` uses correct sorted lock acquisition (safe)
 - `get_balance()` is read-only (safe)
+- `get_statement()` and `freeze()` use proper `with self._lock:` (safe)
 
 ### Hard — Memory Leak & Iterator Bugs
-**Code**: 45-line TTL cache manager  
+**Code**: 60-line TTL cache manager
 **Issues**: 3 (high + medium + high)
 - Listener memory leak (line 11)
 - Expired entries not evicted in `get()` (line 27)
 - Dictionary mutation during iteration in `cleanup_expired()` (line 42)
 
 **Distractors**:
-- `get_stats()` iterates `.values()` safely (no mutation)
+- `get_stats()` iterates `.values()` without mutation (safe)
+- `invalidate_prefix()` collects keys into a list before deletion (safe)
+- `get_active_values()` iterates `.values()` without mutation (safe)
 
 ---
 
