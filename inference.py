@@ -21,13 +21,27 @@ SUCCESS_SCORE_THRESHOLD = 0.5
 # ---------------------------------------------------------------------------
 
 def log_start(task, env, model):
-    print(f"[START] {json.dumps({'task': task, 'env': env, 'model': model})}", flush=True)
+    print(f"[START] task={task} env={env} model={model}", flush=True)
 
 def log_step(step, action, reward, done, error=None):
-    print(f"[STEP] {json.dumps({'step': step, 'action': action, 'reward': reward, 'done': done, 'error': error})}", flush=True)
+    if isinstance(action, dict):
+        parts = [action.get("action_type", "unknown")]
+        if action.get("issue_type"):
+            parts.append(action["issue_type"])
+        if action.get("line_number"):
+            parts.append(f"L{action['line_number']}")
+        action_str = "(" + ",".join(str(p) for p in parts[1:]) + ")" if len(parts) > 1 else parts[0]
+        action_str = parts[0] + (f"({','.join(str(p) for p in parts[1:])})" if len(parts) > 1 else "")
+    else:
+        action_str = str(action)
+    done_str = "true" if done else "false"
+    error_str = error if error is not None else "null"
+    print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={done_str} error={error_str}", flush=True)
 
-def log_end(success, steps, score, rewards):
-    print(f"[END] {json.dumps({'success': success, 'steps': steps, 'score': score, 'rewards': rewards})}", flush=True)
+def log_end(success, steps, rewards):
+    success_str = "true" if success else "false"
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(f"[END] success={success_str} steps={steps} rewards={rewards_str}", flush=True)
 
 # ---------------------------------------------------------------------------
 # Deterministic known-issue detections per task
@@ -291,7 +305,7 @@ OR:
         score = info["score"]
         success = score >= SUCCESS_SCORE_THRESHOLD
 
-        log_end(success=success, steps=obs.step_count, score=score, rewards=rewards)
+        log_end(success=success, steps=obs.step_count, rewards=rewards)
 
         results[task_id] = {
             "score": score,
