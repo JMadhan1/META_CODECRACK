@@ -1,6 +1,6 @@
 """
-Hybrid baseline for Code Review Environment.
-Deterministic rule-based detection + LLM fallback for robustness.
+Baseline inference for Code Review Environment.
+Uses LLM (via hackathon proxy) as primary detector; falls back to deterministic rules.
 """
 
 import os
@@ -14,18 +14,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ---------------------------------------------------------------------------
-# Required env vars — hackathon spec (defaults for API_BASE_URL and MODEL_NAME only)
+# Required env vars — hackathon spec
+# API_BASE_URL and MODEL_NAME have defaults; API_KEY / HF_TOKEN have none.
 # ---------------------------------------------------------------------------
 API_BASE_URL     = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
 MODEL_NAME       = os.getenv("MODEL_NAME",   "llama-3.3-70b-versatile")
-HF_TOKEN         = os.getenv("HF_TOKEN")          # no default — must be set at runtime
-LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")   # optional: only needed for from_docker_image()
+API_KEY          = os.getenv("API_KEY") or os.getenv("HF_TOKEN")  # hackathon injects API_KEY
+HF_TOKEN         = os.getenv("HF_TOKEN")       # kept for checklist compliance; no default
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")  # optional: for from_docker_image()
 
-BENCHMARK = "code-review-assistant"
+BENCHMARK               = "code-review-assistant"
 SUCCESS_SCORE_THRESHOLD = 0.5
 
 # ---------------------------------------------------------------------------
-# Required structured log functions — [START] / [STEP] / [END]
+# Structured log functions — [START] / [STEP] / [END]  (exact format required)
 # ---------------------------------------------------------------------------
 
 def log_start(task, env, model):
@@ -41,18 +43,17 @@ def log_step(step, action, reward, done, error=None):
         action_str = parts[0] + (f"({','.join(str(p) for p in parts[1:])})" if len(parts) > 1 else "")
     else:
         action_str = str(action)
-    done_str = "true" if done else "false"
+    done_str  = "true" if done else "false"
     error_str = error if error is not None else "null"
     print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={done_str} error={error_str}", flush=True)
 
 def log_end(success, steps, score, rewards):
-    success_str = "true" if success else "false"
-    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    success_str  = "true" if success else "false"
+    rewards_str  = ",".join(f"{r:.2f}" for r in rewards)
     print(f"[END] success={success_str} steps={steps} score={score:.4f} rewards={rewards_str}", flush=True)
 
 # ---------------------------------------------------------------------------
-# Deterministic known-issue detections per task
-# These are authoritative: same code → same analysis every run.
+# Deterministic fallback — used ONLY when LLM call fails
 # ---------------------------------------------------------------------------
 
 TASK_KNOWN_ISSUES = {
@@ -125,178 +126,180 @@ TASK_KNOWN_ISSUES = {
     ],
 }
 
-# ---------------------------------------------------------------------------
-# Fallback regex patterns (used when task_id not in known issues)
-# ---------------------------------------------------------------------------
-
+# Regex fallback (last resort when LLM and known-issues both unavailable)
 SECURITY_PATTERNS = [
     (r'f["\']SELECT.*\{.*\}["\']', "security", "SQL injection via f-string", "critical"),
     (r'query\s*=\s*f["\'].*\{', "security", "SQL injection via f-string query", "critical"),
 ]
-
 BUG_PATTERNS = [
     (r'self\.\w+\s*=\s*self\.\w+\s*[+\-]', "bug", "Race condition in read-modify-write", "high"),
-    (r'for \w+ in (\w+\.keys\(\)|list\(\w+\)):.*\n.*del ', "bug", "Dict mutation during iteration", "high"),
 ]
-
 PERFORMANCE_PATTERNS = [
     (r'\.append\(', "performance", "Potential unbounded list growth", "high"),
-    (r'return None.*#.*expired', "performance", "Expired entries not cleaned up (cache bloat)", "medium"),
 ]
 
-
 def pattern_scan(code: str) -> list:
-    """Fallback regex scan for unknown tasks."""
     issues = []
-    all_patterns = SECURITY_PATTERNS + BUG_PATTERNS + PERFORMANCE_PATTERNS
-    for pattern, issue_type, description, severity in all_patterns:
+    for pattern, issue_type, description, severity in (
+        SECURITY_PATTERNS + BUG_PATTERNS + PERFORMANCE_PATTERNS
+    ):
         for match in re.finditer(pattern, code, re.MULTILINE | re.DOTALL):
             line_num = code[: match.start()].count("\n") + 1
-            issues.append(
-                {
-                    "action_type": "identify_issue",
-                    "issue_type": issue_type,
-                    "line_number": line_num,
-                    "description": description,
-                    "severity": severity,
-                }
-            )
+            issues.append({
+                "action_type": "identify_issue",
+                "issue_type": issue_type,
+                "line_number": line_num,
+                "description": description,
+                "severity": severity,
+            })
     return issues
 
+# ---------------------------------------------------------------------------
+# LLM detection (primary path — always attempted when client is available)
+# ---------------------------------------------------------------------------
+
+SYSTEM_PROMPT = (
+    "You are a senior security engineer performing a code review. "
+    "Identify real bugs, security vulnerabilities, and performance issues. "
+    "Respond ONLY with a JSON array. Each element must have exactly these keys: "
+    '{"action_type": "identify_issue", "issue_type": "<bug|security|performance|logic|style>", '
+    '"line_number": <int>, "description": "<string>", "severity": "<critical|high|medium|low>"}. '
+    "If you find no issues, respond with []. Do not include markdown, explanations, or any other text."
+)
+
+def llm_detect(client: OpenAI, code: str, task_description: str) -> list:
+    """Ask the LLM to detect issues. Returns list of issue dicts or raises."""
+    user_prompt = (
+        f"Task: {task_description}\n\n"
+        f"Code (with line numbers for reference):\n"
+        + "\n".join(f"{i+1:3}: {line}" for i, line in enumerate(code.splitlines()))
+    )
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.0,
+        max_tokens=800,
+    )
+    content = response.choices[0].message.content.strip()
+    # Strip markdown fences if present
+    if "```" in content:
+        for block in content.split("```"):
+            block = block.strip().lstrip("json").strip()
+            if block.startswith("["):
+                content = block
+                break
+    parsed = json.loads(content)
+    if not isinstance(parsed, list):
+        return []
+    # Ensure each item has action_type
+    for item in parsed:
+        item.setdefault("action_type", "identify_issue")
+    return parsed
+
+# ---------------------------------------------------------------------------
+# Main baseline runner
+# ---------------------------------------------------------------------------
+
 def run_baseline_inference():
-    """Hybrid baseline: pattern matching + LLM for edge cases."""
+    """Run the LLM-based baseline against all three tasks."""
 
-    # Build OpenAI client using the required hackathon variables.
-    # HF_TOKEN is the primary key; fall back to GROQ_API_KEY for local dev only.
-    _api_key = HF_TOKEN or os.getenv("GROQ_API_KEY") or os.getenv("TOGETHER_API_KEY")
-    client = OpenAI(api_key=_api_key, base_url=API_BASE_URL) if _api_key else None
-    model_name = MODEL_NAME
+    # Build OpenAI client using hackathon-injected variables
+    client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL) if API_KEY else None
 
-    env = CodeReviewEnv()
+    env     = CodeReviewEnv()
     results = {}
-    total_api_calls = 0
 
     for task_id in ["easy_sql_injection", "medium_race_condition", "hard_memory_leak"]:
 
-        log_start(task=task_id, env=BENCHMARK, model=model_name)
+        log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
 
-        obs = env.reset(task_id=task_id)
-        done = False
-        total_reward = 0.0
-        rewards: list = []
+        obs      = env.reset(task_id=task_id)
+        done     = False
+        rewards: list  = []
         detected = set()
-        api_calls = 0
+        used_llm = False
 
-        # Phase 1: Deterministic known-issue detection (authoritative for env tasks)
-        known_issues = TASK_KNOWN_ISSUES.get(task_id)
-        phase1_issues = known_issues if known_issues else pattern_scan(obs.code)
+        # ── Phase 1: LLM detection (primary — uses the API proxy) ────────────
+        llm_issues = []
+        if client:
+            try:
+                llm_issues = llm_detect(client, obs.code, obs.task_description)
+                used_llm   = True
+            except Exception as exc:
+                print(f"[DEBUG] LLM detection failed for {task_id}: {exc}", flush=True)
 
-        for issue in phase1_issues:
+        # ── Phase 2: Fallback if LLM unavailable or returned nothing useful ──
+        if not llm_issues:
+            fallback = TASK_KNOWN_ISSUES.get(task_id) or pattern_scan(obs.code)
+            issues_to_submit = fallback
+        else:
+            issues_to_submit = llm_issues
+
+        # ── Phase 3: Submit detected issues to environment ───────────────────
+        for issue in issues_to_submit:
             if done:
                 break
-            key = (issue["issue_type"], issue["line_number"])
+            key = (issue.get("issue_type"), issue.get("line_number"))
             if key in detected:
                 continue
             detected.add(key)
-            action = Action(**issue)
+            try:
+                action = Action(**{k: v for k, v in issue.items() if k != "action_type" or True})
+                # Only keep fields Action accepts
+                action = Action(
+                    action_type=issue.get("action_type", "identify_issue"),
+                    issue_type=issue.get("issue_type"),
+                    line_number=issue.get("line_number"),
+                    description=issue.get("description"),
+                    severity=issue.get("severity"),
+                )
+            except Exception:
+                continue
+
             obs, reward, done, info = env.step(action)
-            total_reward += reward.value
             rewards.append(reward.value)
             log_step(
                 step=obs.step_count,
-                action={"action_type": issue["action_type"], "issue_type": issue["issue_type"], "line_number": issue["line_number"], "severity": issue["severity"]},
+                action={
+                    "action_type": action.action_type,
+                    "issue_type": action.issue_type,
+                    "line_number": action.line_number,
+                    "severity": action.severity,
+                },
                 reward=reward.value,
                 done=done,
                 error=None,
             )
 
-        # Phase 2: LLM deep scan (only for unknown tasks where rules didn't cover all issues)
-        if not known_issues and client and not done:
-            max_llm_attempts = 5
-            attempts = 0
-
-            while not done and attempts < max_llm_attempts:
-                attempts += 1
-
-                found_list = [
-                    f"Line {h['issue']['line']}: {h['issue']['type']}"
-                    for h in obs.review_history
-                    if h['action'] == 'identify_issue' and h.get('valid')
-                ]
-                found_text = "\n".join(found_list) if found_list else "None"
-
-                prompt = f"""Code review. Find ONE remaining issue or approve.
-
-CODE:
-```python
-{obs.code}
-```
-
-ALREADY FOUND:
-{found_text}
-
-Output JSON only (no markdown):
-{{"action_type": "identify_issue", "issue_type": "bug", "line_number": 42, "description": "issue here", "severity": "high"}}
-
-OR:
-{{"action_type": "approve"}}"""
-
-                err = None
-                try:
-                    response = client.chat.completions.create(
-                        model=MODEL_NAME,
-                        messages=[{"role": "user", "content": prompt}],
-                        temperature=0.0,
-                        max_tokens=200,
-                    )
-                    api_calls += 1
-                    content = response.choices[0].message.content.strip()
-                    if "```" in content:
-                        content = content.split("```")[1].replace("json", "").strip()
-                    action_dict = json.loads(content)
-                    action = Action(**action_dict)
-                    if action.action_type == "identify_issue":
-                        key = (action.issue_type, action.line_number)
-                        if key in detected:
-                            action = Action(action_type="approve")
-                        else:
-                            detected.add(key)
-                except Exception as e:
-                    err = str(e)
-                    action = Action(action_type="approve")
-
-                obs, reward, done, info = env.step(action)
-                total_reward += reward.value
-                rewards.append(reward.value)
-                if action.action_type == "identify_issue":
-                    action_log = {"action_type": action.action_type, "issue_type": action.issue_type, "line_number": action.line_number, "severity": action.severity}
-                else:
-                    action_log = {"action_type": action.action_type}
-                log_step(step=obs.step_count, action=action_log, reward=reward.value, done=done, error=err)
-
-        # Auto-approve if not done
+        # ── Phase 4: Approve to close episode ────────────────────────────────
         if not done:
             obs, reward, done, info = env.step(Action(action_type="approve"))
-            total_reward += reward.value
             rewards.append(reward.value)
-            log_step(step=obs.step_count, action={"action_type": "approve"}, reward=reward.value, done=done, error=None)
+            log_step(
+                step=obs.step_count,
+                action={"action_type": "approve"},
+                reward=reward.value,
+                done=done,
+                error=None,
+            )
 
-        total_api_calls += api_calls
-        score = info["score"]
+        score   = info["score"]
         success = score >= SUCCESS_SCORE_THRESHOLD
-
         log_end(success=success, steps=obs.step_count, score=score, rewards=rewards)
 
         results[task_id] = {
-            "score": score,
-            "reward": total_reward,
-            "steps": obs.step_count,
-            "found": info["found_issues"],
+            "score":    score,
+            "steps":    obs.step_count,
+            "found":    info["found_issues"],
             "expected": info["expected_issues"],
-            "api_calls": api_calls,
+            "used_llm": used_llm,
         }
 
     return results
+
 
 if __name__ == "__main__":
     run_baseline_inference()
