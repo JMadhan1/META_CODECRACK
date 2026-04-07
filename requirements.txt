@@ -5,3 +5,4 @@ openai==1.12.0
 python-dotenv==1.0.0
 pyyaml==6.0.1
 gradio==4.44.1
+huggingface_hub==0.26.2
