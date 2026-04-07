@@ -1,8 +1,8 @@
 ---
 title: CodeCrack
 emoji: ⚡
-colorFrom: indigo
-colorTo: blue
+colorFrom: purple
+colorTo: indigo
 sdk: docker
 app_port: 7860
 pinned: false

@@ -382,227 +382,222 @@ def run_task_arena(task_id: str):
 # ════════════════════════════════════════════════════════════════════════════
 
 _CSS = """
-/* ── Force indigo palette on Gradio CSS variables ── */
+/* ── CodeCrack · Dark Cyber Theme ── */
 :root {
-    --primary-50:  #eef2ff; --primary-100: #e0e7ff; --primary-200: #c7d2fe;
-    --primary-300: #a5b4fc; --primary-400: #818cf8; --primary-500: #6366f1;
-    --primary-600: #4f46e5; --primary-700: #4338ca; --primary-800: #3730a3;
-    --primary-900: #312e81; --primary-950: #1e1b4b;
-    --color-accent:      #4f46e5;
-    --color-accent-soft: rgba(79,70,229,0.10);
-    --button-primary-background-fill:       #4f46e5;
-    --button-primary-background-fill-hover: #4338ca;
-    --button-primary-text-color:            #ffffff;
-    --button-primary-border-color:          #4338ca;
+    --cc-bg:    #080c14;
+    --cc-surf:  #0d1117;
+    --cc-card:  #0f1923;
+    --cc-bdr:   #1a2535;
+    --cc-bdr2:  #243044;
+    --cc-cyan:  #00d4ff;
+    --cc-purple:#a855f7;
+    --cc-green: #2ed573;
+    --cc-red:   #ff4757;
+    --cc-yellow:#ffd32a;
+    --cc-text:  #cdd6f4;
+    --cc-dim:   #6272a4;
+    --cc-muted: #2a3550;
+    --color-accent:      #00d4ff;
+    --color-accent-soft: rgba(0,212,255,.10);
 }
+@keyframes cc-hdr   { 0%,100%{background-position:0 50%} 50%{background-position:100% 50%} }
+@keyframes cc-scan  { to{background-position:0 200%} }
+@keyframes cc-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,.6)} 60%{box-shadow:0 0 0 8px rgba(0,212,255,0)} }
+@keyframes cc-up    { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none} }
 
-/* ── Keyframes ── */
-@keyframes cc-hdr {
-    0%   { background-position: 0% 50%;   }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%;   }
-}
-@keyframes cc-dot {
-    0%,100% { box-shadow: 0 0 0 0   rgba(34,197,94,0.6); }
-    60%     { box-shadow: 0 0 0 6px rgba(34,197,94,0);   }
-}
-@keyframes cc-fade-up {
-    from { opacity:0; transform:translateY(6px); }
-    to   { opacity:1; transform:translateY(0);   }
-}
-
-/* ── Root layout ── */
 .gradio-container {
-    max-width:100% !important;
-    padding:0 !important;
-    margin:0 !important;
-    background:#f1f5f9 !important;
+    max-width:100% !important; padding:0 !important; margin:0 !important;
+    background:var(--cc-bg) !important; color:var(--cc-text) !important;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif !important;
 }
 .gradio-container > .main,
 .gradio-container > .main > .wrap { padding:0 !important; gap:0 !important; }
 
-/* ── Tab nav ── */
+/* Tabs */
 .tab-nav {
-    background:#fff !important;
-    border-bottom:1px solid #e2e8f0 !important;
-    padding:0 28px !important;
+    background:var(--cc-surf) !important;
+    border-bottom:1px solid var(--cc-bdr) !important; padding:0 28px !important;
 }
 .tab-nav button {
-    font-size:13.5px !important; font-weight:500 !important;
-    color:#64748b !important; padding:13px 18px !important;
-    border:none !important; border-bottom:2px solid transparent !important;
-    border-radius:0 !important; background:transparent !important;
-    margin-bottom:-1px !important;
-    transition:color .15s,border-color .15s !important;
-    letter-spacing:.01em !important;
+    font-size:13px !important; font-weight:500 !important; color:var(--cc-dim) !important;
+    padding:14px 20px !important; border:none !important;
+    border-bottom:2px solid transparent !important; border-radius:0 !important;
+    background:transparent !important; margin-bottom:-1px !important;
+    transition:color .15s,border-color .15s,text-shadow .15s !important;
 }
-.tab-nav button:hover:not(.selected) { color:#1e293b !important; }
+.tab-nav button:hover:not(.selected) { color:var(--cc-text) !important; }
 .tab-nav button.selected {
-    color:#4f46e5 !important; font-weight:700 !important;
-    border-bottom-color:#4f46e5 !important;
-    background:transparent !important;
+    color:var(--cc-cyan) !important; font-weight:700 !important;
+    border-bottom-color:var(--cc-cyan) !important;
+    text-shadow:0 0 12px rgba(0,212,255,.5) !important;
+}
+.tabitem { background:var(--cc-bg) !important; padding:24px 28px !important; border:none !important; }
+
+/* Blocks */
+.gradio-container .block, .gradio-container fieldset {
+    background:var(--cc-card) !important; border:1px solid var(--cc-bdr) !important;
+    border-radius:10px !important; box-shadow:0 4px 24px rgba(0,0,0,.5) !important;
 }
 
-/* ── Tab content ── */
-.tabitem { background:#f1f5f9 !important; padding:24px 28px !important; border:none !important; }
-
-/* ── PRIMARY BUTTON (nuclear override) ── */
-button.primary, .btn-primary,
-.gradio-container button.primary,
-.wrap button.primary {
-    background:#4f46e5 !important;
-    background-image:none !important;
-    border:1px solid #4338ca !important;
-    color:#fff !important;
-    font-weight:700 !important; font-size:14px !important;
-    letter-spacing:.015em !important;
-    border-radius:8px !important;
-    box-shadow:0 2px 10px rgba(79,70,229,.40) !important;
+/* Button primary */
+button.primary, .gradio-container button.primary, .wrap button.primary {
+    background:linear-gradient(135deg,#004e6a,#002d55) !important;
+    background-image:linear-gradient(135deg,#004e6a,#002d55) !important;
+    border:1px solid rgba(0,212,255,.4) !important;
+    color:#e6edf3 !important; font-weight:700 !important; font-size:14px !important;
+    letter-spacing:.025em !important; border-radius:8px !important;
+    box-shadow:0 0 16px rgba(0,212,255,.14),inset 0 1px 0 rgba(0,212,255,.07) !important;
     transition:all .2s cubic-bezier(.4,0,.2,1) !important;
 }
 button.primary:hover, .gradio-container button.primary:hover {
-    background:#4338ca !important;
-    box-shadow:0 6px 22px rgba(79,70,229,.50) !important;
-    transform:translateY(-2px) !important;
+    background:linear-gradient(135deg,#006688,#003f77) !important;
+    background-image:linear-gradient(135deg,#006688,#003f77) !important;
+    box-shadow:0 0 28px rgba(0,212,255,.32),inset 0 1px 0 rgba(0,212,255,.14) !important;
+    border-color:rgba(0,212,255,.65) !important; transform:translateY(-1px) !important;
 }
-button.primary:active { background:#3730a3 !important; transform:translateY(0) !important; }
+button.primary:active { transform:translateY(0) !important; }
 
-/* ── Inputs ── */
-.gradio-container input,
-.gradio-container select,
-.gradio-container textarea {
-    border-radius:7px !important; border-color:#e2e8f0 !important;
-    font-size:13.5px !important; background:#fff !important;
-    font-family:inherit !important;
-    transition:border-color .15s,box-shadow .15s !important;
+/* Inputs */
+.gradio-container input, .gradio-container select, .gradio-container textarea {
+    background:var(--cc-surf) !important; border:1px solid var(--cc-bdr) !important;
+    border-radius:7px !important; color:var(--cc-text) !important;
+    font-size:13.5px !important; transition:border-color .15s,box-shadow .15s !important;
 }
 .gradio-container input:focus, .gradio-container select:focus {
-    border-color:#4f46e5 !important;
-    box-shadow:0 0 0 3px rgba(79,70,229,.12) !important;
+    border-color:var(--cc-cyan) !important; box-shadow:0 0 0 3px rgba(0,212,255,.1) !important;
 }
 
-/* ── Block labels ── */
+/* Labels */
 .block .label-wrap label, .block > label {
     font-size:11px !important; font-weight:700 !important;
-    text-transform:uppercase !important; letter-spacing:.07em !important;
-    color:#64748b !important;
+    text-transform:uppercase !important; letter-spacing:.07em !important; color:var(--cc-dim) !important;
 }
 
-/* ── Markdown ── */
-.prose, .markdown { font-size:13.5px !important; line-height:1.7 !important; color:#1e293b !important; }
+/* Markdown */
+.prose, .markdown { font-size:13.5px !important; line-height:1.7 !important; color:var(--cc-text) !important; }
 .prose pre, .markdown pre {
-    background:#0f172a !important; border-radius:8px !important;
-    border:1px solid #1e293b !important; font-size:12px !important;
+    background:#050810 !important; border:1px solid var(--cc-bdr) !important;
+    border-radius:8px !important; font-size:12px !important;
 }
 .prose code, .markdown code {
-    background:rgba(99,102,241,.09) !important; color:#4f46e5 !important;
+    background:rgba(0,212,255,.07) !important; color:var(--cc-cyan) !important;
     border-radius:4px !important; padding:1px 5px !important; font-size:.88em !important;
 }
+.prose table th, .markdown table th {
+    background:var(--cc-surf) !important; color:var(--cc-dim) !important; border-color:var(--cc-bdr) !important;
+}
+.prose table td, .markdown table td { border-color:var(--cc-bdr) !important; color:var(--cc-text) !important; }
+.prose strong, .markdown strong, .gradio-container strong { color:var(--cc-cyan) !important; font-weight:700 !important; }
+.prose a, .markdown a { color:var(--cc-cyan) !important; }
 
-/* ── Scrollbar ── */
+/* Dropdowns */
+.gradio-container ul[role=listbox], .gradio-container .options {
+    background:var(--cc-card) !important; border-color:var(--cc-bdr) !important;
+}
+.gradio-container li[role=option]:hover { background:rgba(0,212,255,.07) !important; }
+
+/* Scrollbar */
 ::-webkit-scrollbar { width:5px; height:5px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
-::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+::-webkit-scrollbar-track { background:var(--cc-bg); }
+::-webkit-scrollbar-thumb { background:var(--cc-muted); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--cc-dim); }
 """
 
-# Use Base theme — minimal, so our CSS wins
+# Dark cyber theme — CSS vars do the heavy lifting
 _theme = gr.themes.Base(
-    primary_hue="indigo",
+    primary_hue="sky",
     secondary_hue="slate",
     neutral_hue="slate",
     text_size=gr.themes.sizes.text_sm,
     radius_size=gr.themes.sizes.radius_md,
 ).set(
-    # Buttons
-    button_primary_background_fill="#4f46e5",
-    button_primary_background_fill_hover="#4338ca",
-    button_primary_text_color="#ffffff",
-    button_primary_border_color="#4338ca",
-    button_primary_shadow="0 2px 10px rgba(79,70,229,0.40)",
-    button_primary_shadow_hover="0 6px 22px rgba(79,70,229,0.50)",
-    # Layout
-    body_background_fill="#f1f5f9",
-    body_text_color="#1e293b",
-    block_background_fill="#ffffff",
-    block_border_color="#e2e8f0",
+    button_primary_background_fill="linear-gradient(135deg,#004e6a,#002d55)",
+    button_primary_background_fill_hover="linear-gradient(135deg,#006688,#003f77)",
+    button_primary_text_color="#e6edf3",
+    button_primary_border_color="rgba(0,212,255,0.4)",
+    button_primary_shadow="0 0 16px rgba(0,212,255,0.14)",
+    button_primary_shadow_hover="0 0 28px rgba(0,212,255,0.32)",
+    body_background_fill="#080c14",
+    body_text_color="#cdd6f4",
+    block_background_fill="#0f1923",
+    block_border_color="#1a2535",
     block_border_width="1px",
-    block_shadow="0 1px 4px rgba(0,0,0,0.06)",
-    block_label_text_color="#64748b",
+    block_shadow="0 4px 24px rgba(0,0,0,0.5)",
+    block_label_text_color="#6272a4",
     block_label_text_weight="700",
     block_label_text_size="11px",
-    # Inputs
-    input_background_fill="#ffffff",
-    input_border_color="#e2e8f0",
-    input_border_color_focus="#4f46e5",
-    input_shadow_focus="0 0 0 3px rgba(79,70,229,0.12)",
-    # Accent
-    color_accent="#4f46e5",
-    color_accent_soft="rgba(79,70,229,0.10)",
-    checkbox_background_color_selected="#4f46e5",
-    slider_color="#4f46e5",
-    link_text_color="#4f46e5",
+    input_background_fill="#0d1117",
+    input_border_color="#1a2535",
+    input_border_color_focus="#00d4ff",
+    input_shadow_focus="0 0 0 3px rgba(0,212,255,0.1)",
+    color_accent="#00d4ff",
+    color_accent_soft="rgba(0,212,255,0.1)",
+    checkbox_background_color_selected="#00d4ff",
+    slider_color="#00d4ff",
+    link_text_color="#00d4ff",
 )
 
-# ── Pre-built HTML blocks (inline styles = reliable in any Gradio version) ──
+# ── Pre-built HTML blocks ──────────────────────────────────────────────────
 
 _HEADER = f"""
 <div style="
-    background:linear-gradient(-45deg,#0f172a,#1a1040,#0f172a,#0c1535);
-    background-size:400% 400%;
-    animation:cc-hdr 14s ease infinite;
-    border-bottom:1px solid rgba(99,102,241,.15);
-    padding:0 32px; height:60px;
+    background:linear-gradient(-45deg,#080c14,#0a1020,#060d18,#0d1528);
+    background-size:400% 400%; animation:cc-hdr 16s ease infinite;
+    border-bottom:1px solid rgba(0,212,255,.12);
+    padding:0 32px; height:66px;
     display:flex; align-items:center; justify-content:space-between;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     position:relative; overflow:hidden;
 ">
-  <!-- subtle grid overlay -->
-  <div style="position:absolute;inset:0;
-    background-image:linear-gradient(rgba(99,102,241,.04) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(99,102,241,.04) 1px,transparent 1px);
-    background-size:32px 32px; pointer-events:none;"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,transparent 0%,rgba(0,212,255,.025) 50%,transparent 100%);
+    background-size:100% 200%; animation:cc-scan 6s linear infinite;"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;
+    background-image:radial-gradient(circle,rgba(0,212,255,.055) 1px,transparent 1px);
+    background-size:28px 28px;"></div>
+  <div style="position:absolute;top:0;left:0;width:90px;height:2px;
+    background:linear-gradient(90deg,#00d4ff,transparent);"></div>
+  <div style="position:absolute;top:0;left:0;width:2px;height:44px;
+    background:linear-gradient(180deg,#00d4ff,transparent);"></div>
+  <div style="position:absolute;bottom:0;right:0;width:90px;height:1px;
+    background:linear-gradient(270deg,rgba(168,85,247,.5),transparent);"></div>
 
-  <!-- Left: brand -->
-  <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:1;">
+  <div style="display:flex;align-items:center;gap:16px;position:relative;z-index:1;">
     <div style="
-      width:32px;height:32px;border-radius:9px;
-      background:linear-gradient(135deg,#4f46e5,#818cf8);
-      display:flex;align-items:center;justify-content:center;
-      font-weight:900;font-size:17px;color:#fff;flex-shrink:0;
-      box-shadow:0 0 0 2px rgba(129,140,248,.3),0 4px 14px rgba(79,70,229,.5);
-      letter-spacing:-1px;
-    ">C</div>
-    <span style="color:#f1f5f9;font-size:16px;font-weight:800;letter-spacing:-.025em;">CodeCrack</span>
-    <div style="width:1px;height:18px;background:rgba(255,255,255,.12);"></div>
-    <span style="color:#64748b;font-size:12.5px;letter-spacing:.01em;">AI Code Review Environment</span>
-    <span style="
-      color:#a5b4fc;font-size:10.5px;font-weight:700;letter-spacing:.06em;
-      background:rgba(99,102,241,.18);border:1px solid rgba(129,140,248,.3);
-      padding:2px 10px;border-radius:5px;
-    ">OpenEnv v1.0</span>
+      width:40px;height:40px;border-radius:11px;
+      background:linear-gradient(135deg,#003d55,#00223d);
+      border:1px solid rgba(0,212,255,.35);
+      display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+      box-shadow:0 0 24px rgba(0,212,255,.25),0 0 60px rgba(0,212,255,.08);
+    ">⚡</div>
+    <div>
+      <div style="line-height:1.1;font-size:17px;font-weight:800;letter-spacing:-.025em;">
+        <span style="color:#e6edf3;">Code</span><span style="color:#00d4ff;text-shadow:0 0 14px rgba(0,212,255,.55);">Crack</span>
+      </div>
+      <div style="color:#2a3550;font-size:10px;font-weight:600;letter-spacing:.14em;margin-top:2px;">AI CODE REVIEW ENVIRONMENT</div>
+    </div>
+    <div style="width:1px;height:26px;background:rgba(255,255,255,.06);margin:0 2px;"></div>
+    <div style="
+      color:#00d4ff;font-size:10px;font-weight:700;letter-spacing:.1em;
+      background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);
+      padding:4px 11px;border-radius:5px;box-shadow:0 0 10px rgba(0,212,255,.08);
+    ">OpenEnv v1.0</div>
   </div>
 
-  <!-- Right: status + model -->
   <div style="display:flex;align-items:center;gap:10px;position:relative;z-index:1;">
     <div style="
-      display:flex;align-items:center;gap:7px;
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-      padding:6px 13px;border-radius:7px;backdrop-filter:blur(6px);
+      display:flex;align-items:center;gap:8px;
+      background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.13);
+      padding:7px 14px;border-radius:8px;
     ">
-      <span style="
-        width:7px;height:7px;border-radius:50%;background:#22c55e;
-        display:inline-block;flex-shrink:0;
-        animation:cc-dot 2s ease-in-out infinite;
-      "></span>
-      <span style="font-size:12px;color:#94a3b8;">{prov}</span>
+      <span style="width:7px;height:7px;border-radius:50%;background:#2ed573;display:inline-block;
+        flex-shrink:0;box-shadow:0 0 8px #2ed573;animation:cc-pulse 2.5s ease-in-out infinite;"></span>
+      <span style="font-size:12px;color:#6272a4;font-weight:500;">{prov}</span>
     </div>
     <div style="
-      background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);
-      padding:6px 13px;border-radius:7px;
-      font-family:'SF Mono','Fira Code',Consolas,monospace;
-      font-size:11px;color:#64748b;letter-spacing:.01em;
+      background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);
+      padding:7px 14px;border-radius:8px;
+      font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:11px;color:#2a3550;
     ">{model}</div>
   </div>
 </div>
@@ -610,35 +605,32 @@ _HEADER = f"""
 
 _STATS = """
 <div style="
-    background:#fff;border-bottom:1px solid #e2e8f0;
+    background:#0d1117;border-bottom:1px solid #1a2535;
     padding:0 32px;height:50px;
     display:flex;align-items:center;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    animation:cc-fade-up .4s ease both;
+    font-family:'SF Mono','Fira Code',Consolas,monospace;
+    animation:cc-up .45s ease both;
 ">
-  <div style="display:flex;align-items:baseline;gap:7px;padding-right:28px;margin-right:28px;border-right:1px solid #e2e8f0;">
-    <span style="
-      font-family:'SF Mono','Fira Code',Consolas,monospace;
-      font-size:18px;font-weight:800;color:#4f46e5;letter-spacing:-.03em;
-      text-shadow:0 0 20px rgba(99,102,241,.35);
-    ">1.000</span>
-    <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Baseline</span>
+  <div style="display:flex;align-items:center;gap:10px;padding-right:26px;margin-right:26px;border-right:1px solid #1a2535;">
+    <span style="font-size:9px;color:#2a3550;text-transform:uppercase;letter-spacing:.14em;font-weight:700;">Baseline</span>
+    <span style="font-size:19px;font-weight:900;color:#00d4ff;letter-spacing:-.04em;text-shadow:0 0 18px rgba(0,212,255,.5);">1.000</span>
   </div>
-  <div style="display:flex;align-items:baseline;gap:7px;padding-right:28px;margin-right:28px;border-right:1px solid #e2e8f0;">
-    <span style="font-size:18px;font-weight:800;color:#0f172a;">3</span>
-    <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Tasks</span>
+  <div style="display:flex;align-items:center;gap:10px;padding-right:26px;margin-right:26px;border-right:1px solid #1a2535;">
+    <span style="font-size:9px;color:#2a3550;text-transform:uppercase;letter-spacing:.14em;font-weight:700;">Tasks</span>
+    <span style="font-size:19px;font-weight:900;color:#cdd6f4;">3</span>
   </div>
-  <div style="display:flex;align-items:baseline;gap:7px;padding-right:28px;margin-right:28px;border-right:1px solid #e2e8f0;">
-    <span style="font-size:16px;font-weight:800;color:#0f172a;">Hybrid</span>
-    <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Strategy</span>
+  <div style="display:flex;align-items:center;gap:10px;padding-right:26px;margin-right:26px;border-right:1px solid #1a2535;">
+    <span style="font-size:9px;color:#2a3550;text-transform:uppercase;letter-spacing:.14em;font-weight:700;">Strategy</span>
+    <span style="font-size:14px;font-weight:700;color:#a855f7;text-shadow:0 0 10px rgba(168,85,247,.4);">Hybrid</span>
   </div>
-  <div style="display:flex;align-items:baseline;gap:7px;padding-right:28px;margin-right:28px;border-right:1px solid #e2e8f0;">
-    <span style="font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:16px;font-weight:800;color:#0f172a;">±2</span>
-    <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Line Tolerance</span>
+  <div style="display:flex;align-items:center;gap:10px;padding-right:26px;margin-right:26px;border-right:1px solid #1a2535;">
+    <span style="font-size:9px;color:#2a3550;text-transform:uppercase;letter-spacing:.14em;font-weight:700;">Tolerance</span>
+    <span style="font-size:16px;font-weight:800;color:#cdd6f4;">±2</span>
+    <span style="font-size:9px;color:#2a3550;">lines</span>
   </div>
-  <div style="display:flex;align-items:baseline;gap:7px;">
-    <span style="font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:13px;font-weight:800;color:#4f46e5;">0.5R + 0.3P + 0.2S</span>
-    <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Grading Formula</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="font-size:9px;color:#2a3550;text-transform:uppercase;letter-spacing:.14em;font-weight:700;">Grading</span>
+    <span style="font-size:12px;font-weight:700;color:#00d4ff;">0.5R + 0.3P + 0.2S</span>
   </div>
 </div>
 """
@@ -646,96 +638,86 @@ _STATS = """
 def _note(html: str) -> str:
     return f"""
 <div style="
-    background:linear-gradient(to right,rgba(79,70,229,.03),transparent);
-    border:1px solid #e2e8f0;border-left:3px solid #4f46e5;
-    border-radius:8px;padding:13px 18px;margin-bottom:20px;
+    background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.12);
+    border-left:3px solid #00d4ff;border-radius:8px;
+    padding:13px 18px;margin-bottom:20px;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    font-size:13px;color:#475569;line-height:1.65;
-    box-shadow:0 1px 3px rgba(0,0,0,.04);
-    animation:cc-fade-up .35s ease both;
+    font-size:13px;color:#6272a4;line-height:1.65;
+    animation:cc-up .35s ease both;
 ">{html}</div>"""
 
 _TASK_CARDS = """
 <div style="
-    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
-    margin-bottom:22px;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+    margin-bottom:24px;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    animation:cc-fade-up .4s ease both;
+    animation:cc-up .45s ease both;
 ">
-  <!-- EASY -->
-  <div style="
-    background:#fff;border:1px solid #e2e8f0;border-radius:10px;
-    padding:18px;display:flex;align-items:flex-start;gap:13px;
-    box-shadow:0 1px 4px rgba(0,0,0,.05);
-    transition:box-shadow .2s,transform .2s;
-    border-top:3px solid #22c55e;
-  ">
-    <span style="
-      background:#f0fdf4;color:#166534;border:1px solid #a7f3d0;
-      font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
-      padding:3px 9px;border-radius:4px;white-space:nowrap;margin-top:2px;flex-shrink:0;
-    ">Easy</span>
-    <div>
-      <div style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:5px;">SQL Injection Detection</div>
-      <div style="font-size:11.5px;color:#94a3b8;font-family:'SF Mono','Fira Code',Consolas,monospace;">
-        1 issue · 38 lines · score <strong style="color:#4f46e5;">1.000</strong>
-      </div>
+  <div style="background:#0d1117;border:1px solid #1a2535;border-radius:12px;
+    padding:20px;box-shadow:0 4px 24px rgba(0,0,0,.5);
+    border-top:2px solid #2ed573;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;right:0;width:100px;height:100px;
+      background:radial-gradient(circle at top right,rgba(46,213,115,.07),transparent);pointer-events:none;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="background:rgba(46,213,115,.1);color:#2ed573;border:1px solid rgba(46,213,115,.3);
+        font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+        padding:3px 9px;border-radius:4px;">Easy</span>
+      <span style="font-size:21px;font-weight:900;color:#2ed573;font-family:'SF Mono',monospace;
+        text-shadow:0 0 14px rgba(46,213,115,.5);">1.000</span>
     </div>
+    <div style="font-size:14px;font-weight:700;color:#cdd6f4;margin-bottom:6px;">SQL Injection Detection</div>
+    <div style="font-size:11px;color:#2a3550;font-family:'SF Mono',Consolas,monospace;">1 issue · 38 lines · security</div>
   </div>
-  <!-- MEDIUM -->
-  <div style="
-    background:#fff;border:1px solid #e2e8f0;border-radius:10px;
-    padding:18px;display:flex;align-items:flex-start;gap:13px;
-    box-shadow:0 1px 4px rgba(0,0,0,.05);
-    border-top:3px solid #eab308;
-  ">
-    <span style="
-      background:#fffbeb;color:#92400e;border:1px solid #fcd34d;
-      font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
-      padding:3px 9px;border-radius:4px;white-space:nowrap;margin-top:2px;flex-shrink:0;
-    ">Medium</span>
-    <div>
-      <div style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:5px;">Race Condition Analysis</div>
-      <div style="font-size:11.5px;color:#94a3b8;font-family:'SF Mono','Fira Code',Consolas,monospace;">
-        2 issues · 51 lines · score <strong style="color:#4f46e5;">1.000</strong>
-      </div>
+
+  <div style="background:#0d1117;border:1px solid #1a2535;border-radius:12px;
+    padding:20px;box-shadow:0 4px 24px rgba(0,0,0,.5);
+    border-top:2px solid #ffd32a;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;right:0;width:100px;height:100px;
+      background:radial-gradient(circle at top right,rgba(255,211,42,.07),transparent);pointer-events:none;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="background:rgba(255,211,42,.1);color:#ffd32a;border:1px solid rgba(255,211,42,.3);
+        font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+        padding:3px 9px;border-radius:4px;">Medium</span>
+      <span style="font-size:21px;font-weight:900;color:#ffd32a;font-family:'SF Mono',monospace;
+        text-shadow:0 0 14px rgba(255,211,42,.5);">1.000</span>
     </div>
+    <div style="font-size:14px;font-weight:700;color:#cdd6f4;margin-bottom:6px;">Race Condition Analysis</div>
+    <div style="font-size:11px;color:#2a3550;font-family:'SF Mono',Consolas,monospace;">2 issues · 51 lines · concurrency</div>
   </div>
-  <!-- HARD -->
-  <div style="
-    background:#fff;border:1px solid #e2e8f0;border-radius:10px;
-    padding:18px;display:flex;align-items:flex-start;gap:13px;
-    box-shadow:0 1px 4px rgba(0,0,0,.05);
-    border-top:3px solid #ef4444;
-  ">
-    <span style="
-      background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;
-      font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
-      padding:3px 9px;border-radius:4px;white-space:nowrap;margin-top:2px;flex-shrink:0;
-    ">Hard</span>
-    <div>
-      <div style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:5px;">Memory Leak &amp; Iterator Bug</div>
-      <div style="font-size:11.5px;color:#94a3b8;font-family:'SF Mono','Fira Code',Consolas,monospace;">
-        3 issues · 60 lines · score <strong style="color:#4f46e5;">1.000</strong>
-      </div>
+
+  <div style="background:#0d1117;border:1px solid #1a2535;border-radius:12px;
+    padding:20px;box-shadow:0 4px 24px rgba(0,0,0,.5);
+    border-top:2px solid #ff4757;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;right:0;width:100px;height:100px;
+      background:radial-gradient(circle at top right,rgba(255,71,87,.07),transparent);pointer-events:none;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="background:rgba(255,71,87,.1);color:#ff4757;border:1px solid rgba(255,71,87,.3);
+        font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+        padding:3px 9px;border-radius:4px;">Hard</span>
+      <span style="font-size:21px;font-weight:900;color:#ff4757;font-family:'SF Mono',monospace;
+        text-shadow:0 0 14px rgba(255,71,87,.5);">1.000</span>
     </div>
+    <div style="font-size:14px;font-weight:700;color:#cdd6f4;margin-bottom:6px;">Memory Leak &amp; Iterator Bug</div>
+    <div style="font-size:11px;color:#2a3550;font-family:'SF Mono',Consolas,monospace;">3 issues · 60 lines · performance</div>
   </div>
 </div>
 """
 
 _FOOTER = """
 <div style="
-    background:#fff;border-top:1px solid #e2e8f0;margin-top:8px;
-    padding:14px 32px;display:flex;justify-content:space-between;align-items:center;
+    background:#0d1117;border-top:1px solid #1a2535;
+    padding:14px 32px;
+    display:flex;justify-content:space-between;align-items:center;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    font-size:12px;color:#94a3b8;
+    font-size:12px;color:#2a3550;
 ">
-  <div style="display:flex;align-items:center;gap:8px;">
-    <div style="width:20px;height:20px;border-radius:5px;
-                background:linear-gradient(135deg,#4f46e5,#818cf8);
-                display:flex;align-items:center;justify-content:center;
-                font-weight:900;font-size:11px;color:#fff;">C</div>
-    <span style="font-weight:700;color:#374151;font-size:13px;">CodeCrack</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="width:24px;height:24px;border-radius:6px;
+      background:linear-gradient(135deg,#003d55,#002240);
+      border:1px solid rgba(0,212,255,.25);
+      display:flex;align-items:center;justify-content:center;font-size:13px;
+      box-shadow:0 0 10px rgba(0,212,255,.15);">⚡</div>
+    <span style="font-weight:700;color:#6272a4;font-size:13px;">CodeCrack</span>
   </div>
   <span>OpenEnv-compliant RL environment for AI code review agents</span>
   <span>Scaler Meta PyTorch Hackathon 2025</span>

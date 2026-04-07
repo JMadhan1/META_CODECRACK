@@ -38,10 +38,10 @@ def log_step(step, action, reward, done, error=None):
     error_str = error if error is not None else "null"
     print(f"[STEP] step={step} action={action_str} reward={reward:.2f} done={done_str} error={error_str}", flush=True)
 
-def log_end(success, steps, rewards):
+def log_end(success, steps, score, rewards):
     success_str = "true" if success else "false"
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={success_str} steps={steps} rewards={rewards_str}", flush=True)
+    print(f"[END] success={success_str} steps={steps} score={score:.4f} rewards={rewards_str}", flush=True)
 
 # ---------------------------------------------------------------------------
 # Deterministic known-issue detections per task
@@ -305,7 +305,7 @@ OR:
         score = info["score"]
         success = score >= SUCCESS_SCORE_THRESHOLD
 
-        log_end(success=success, steps=obs.step_count, rewards=rewards)
+        log_end(success=success, steps=obs.step_count, score=score, rewards=rewards)
 
         results[task_id] = {
             "score": score,
