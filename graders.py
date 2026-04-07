@@ -22,7 +22,7 @@ def grade_task(task_id: str, state: Dict[str, Any], review_history: List[Dict]) 
     false_positives = state.get("false_positives", 0)
 
     if not expected:
-        return 1.0 if not found else 0.0
+        return 0.999 if not found else 0.001
 
     def matches(found_issue: Dict, expected_issue: Dict) -> bool:
         type_match = found_issue["type"] == expected_issue["type"]
@@ -57,4 +57,4 @@ def grade_task(task_id: str, state: Dict[str, Any], review_history: List[Dict]) 
     # Final weighted score
     final = (0.5 * recall) + (0.3 * precision) + (0.2 * severity_score)
 
-    return max(0.0, min(1.0, final))
+    return max(0.001, min(0.999, final))
