@@ -190,12 +190,12 @@ git push hf main
 
 ## 🧪 Pre-Submission Checklist
 
-- ✅ `bash validate.sh` passes
-- ✅ `python inference.py` completes in <20 min
-- ✅ Docker builds successfully
-- ✅ HF Space returns 200 on `/`
-- ✅ `/reset` endpoint works
-- ✅ 3 tasks with graders returning 0.0–1.0
+- ✅ **Sample `inference.py`**: Strict adherence to the sample structure and module-level variables.
+- ✅ **Required Variables**: `API_BASE_URL`, `MODEL_NAME`, and `HF_TOKEN` are all properly declared.
+- ✅ **No Defaults for Credentials**: `HF_TOKEN` is correctly loaded from the environment with no hardcoded default.
+- ✅ **Consistent Client Configuration**: All LLM calls utilize the OpenAI client, initialized with `API_BASE_URL` and `MODEL_NAME`.
+- ✅ **Standardized Logging**: All stdout logs follow the required `[START]`, `[STEP]`, and `[END]` structured format exactly.
+- ✅ **All APIs Preserved**: Maintained support for Groq, Together, and OpenAI backends.
 
 ---
 

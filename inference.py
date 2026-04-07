@@ -13,6 +13,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ---------------------------------------------------------------------------
+# Required env vars — hackathon spec (defaults for API_BASE_URL and MODEL_NAME only)
+# ---------------------------------------------------------------------------
+API_BASE_URL     = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
+MODEL_NAME       = os.getenv("MODEL_NAME",   "llama-3.3-70b-versatile")
+HF_TOKEN         = os.getenv("HF_TOKEN")          # no default — must be set at runtime
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")   # optional: only needed for from_docker_image()
+
 BENCHMARK = "code-review-assistant"
 SUCCESS_SCORE_THRESHOLD = 0.5
 
@@ -30,7 +38,6 @@ def log_step(step, action, reward, done, error=None):
             parts.append(action["issue_type"])
         if action.get("line_number"):
             parts.append(f"L{action['line_number']}")
-        action_str = "(" + ",".join(str(p) for p in parts[1:]) + ")" if len(parts) > 1 else parts[0]
         action_str = parts[0] + (f"({','.join(str(p) for p in parts[1:])})" if len(parts) > 1 else "")
     else:
         action_str = str(action)
@@ -159,38 +166,11 @@ def pattern_scan(code: str) -> list:
 def run_baseline_inference():
     """Hybrid baseline: pattern matching + LLM for edge cases."""
 
-    # API setup — hackathon-required env vars take priority
-    api_base = os.getenv("API_BASE_URL")
-    model = os.getenv("MODEL_NAME")
-    hf_token = os.getenv("HF_TOKEN")
-    groq_key = os.getenv("GROQ_API_KEY")
-    together_key = os.getenv("TOGETHER_API_KEY")
-
-    if api_base and model and hf_token:
-        api_key = hf_token
-    elif groq_key:
-        api_key = groq_key
-        api_base = api_base or "https://api.groq.com/openai/v1"
-        model = model or "llama-3.3-70b-versatile"
-    elif together_key:
-        api_key = together_key
-        api_base = "https://api.together.xyz/v1"
-        model = model or "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
-    elif hf_token:
-        api_key = hf_token
-        api_base = api_base or "https://api-inference.huggingface.co/v1"
-        model = model or "meta-llama/Llama-3.1-70B-Instruct"
-    else:
-        api_key = None
-        api_base = None
-        model = None
-
-    model_name = model or "pattern-only"
-
-    if api_base and api_key:
-        client = OpenAI(api_key=api_key, base_url=api_base)
-    else:
-        client = None
+    # Build OpenAI client using the required hackathon variables.
+    # HF_TOKEN is the primary key; fall back to GROQ_API_KEY for local dev only.
+    _api_key = HF_TOKEN or os.getenv("GROQ_API_KEY") or os.getenv("TOGETHER_API_KEY")
+    client = OpenAI(api_key=_api_key, base_url=API_BASE_URL) if _api_key else None
+    model_name = MODEL_NAME
 
     env = CodeReviewEnv()
     results = {}
@@ -264,7 +244,7 @@ OR:
                 err = None
                 try:
                     response = client.chat.completions.create(
-                        model=model,
+                        model=MODEL_NAME,
                         messages=[{"role": "user", "content": prompt}],
                         temperature=0.0,
                         max_tokens=200,
